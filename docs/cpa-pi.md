@@ -7,13 +7,19 @@ Pi (OpenAI Chat Completions) → CPA → devin-2api → Devin
 ```
 
 CPA's `openai-compatibility` provider calls this adapter's `/v1/chat/completions`.
-Register public aliases as `devin/<upstream-model-id>` without an additional
+Register SWE-2 once as `devin/swe-2` (adapter model `swe-2`) without an additional
 provider `prefix`. Pi's existing CPA model-directory integration can discover
-these aliases; a second Pi provider or a second copy of the Devin token is not
+the alias and its reasoning levels; a second Pi provider or a second copy of the Devin token is not
 needed. A model appearing in the upstream directory does not prove entitlement
 or that a generation will succeed.
 
 ## Changes in this fork
+
+- SWE-2 uses a single public model ID. Chat `reasoning_effort` and Responses
+  `reasoning.effort` select `medium`, `high`, or `max`; omission defaults to high.
+  Only the adapter translates this to the corresponding upstream model variant.
+  Response model names remain `swe-2`. Unsupported efforts return a client error.
+  Explicit effort on other model families is rejected until a mapping exists.
 
 - Responses history reconstructs consecutive assistant text/function-call items
   as one assistant turn, preserving parallel tool calls and their result IDs.
@@ -48,21 +54,22 @@ honors every generation parameter.
 2. Install the binary at `/data/data1/apps/devin-2api/devin-2api` (0755).
    Adapt the service's binary path for other hosts.
 3. Copy `deploy/config.example.yaml` to `/etc/devin-2api/config.yaml`, fill in
-   credentials privately, set mode 0600, and choose a model from the account's
-   catalog. Use distinct random API and dashboard keys. Adjust or omit `proxy`
+   credentials privately and set mode 0600. The `swe-2` family alias routes to
+   the account's SWE-2 variants. Use distinct random API and dashboard keys. Adjust or omit `proxy`
    according to the host's outbound network.
 4. Install `deploy/devin-2api.service` in `/etc/systemd/system/` and enable it.
    This unit requires systemd with `LoadCredential` support (Ubuntu 22.04 works).
    The service runs as a dynamic unprivileged user and reads a private credential
    copy. It only listens on loopback; the dashboard has no public route.
 5. Back up CPA's configuration, then merge the provider in `deploy/cpa.example.yaml`
-   with the matching internal API key and selected upstream model IDs. CPA must
+   with the matching internal API key and unified model ID. CPA must
    reach the adapter on the same host network. Set per-key `proxy-url: direct`
    so loopback requests do not enter CPA's global outbound proxy.
-6. Refresh Pi's existing CPA model list and choose a `devin/` alias. Do not infer
+6. Refresh Pi's existing CPA model list and choose `devin/swe-2`. Select medium,
+   high or max using Pi's thinking controls (or `/gateway-thinking`). Do not infer
    model capabilities or prices from similarly named models at other providers.
-   Keep reasoning control at the upstream default: this adapter does not map
-   `reasoning_effort` or thinking budgets. Configure context/output budgets only
+   The upstream-default choice omits the effort and uses high. Numeric thinking
+   budgets are not mapped. Configure context/output budgets only
    from verified catalog information or explicit local limits.
 
 Configuration is read once at startup; credential rotation requires restarting
@@ -71,8 +78,8 @@ Leave debug logging disabled because it records conversation content.
 
 ## Remaining limitations
 
-- `tool_choice`, stop sequences, structured-output constraints and reasoning
-  controls are not implemented end to end.
+- `tool_choice`, stop sequences, structured-output constraints, numeric thinking
+  budgets and effort mapping for families other than SWE-2 are not implemented end to end.
 - Image input must be embedded as Base64; earlier turns' images are placeholders.
 - WebSocket transport handles one response per connection. Prefer HTTP/SSE for
   the CPA/Pi route.

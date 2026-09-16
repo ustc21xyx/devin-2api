@@ -34,6 +34,14 @@ type Request struct {
 	TopP *float64 `json:"top_p,omitempty"`
 	// PreviousResponseID 是上游 Responses 会话关联标识。
 	PreviousResponseID string `json:"previous_response_id,omitempty"`
+	// Reasoning 是 Responses 原生的思考控制字段。
+	Reasoning *ReasoningOptions `json:"reasoning,omitempty"`
+}
+
+// ReasoningOptions 保留客户端选择的离散思考档位。
+type ReasoningOptions struct {
+	// Effort 为空时使用适配器模型默认档位。
+	Effort string `json:"effort,omitempty"`
 }
 
 // Tool 是 OpenAI Responses function 工具定义。
@@ -84,6 +92,9 @@ func DecodeRequest(data []byte) (AdaptedRequest, error) {
 
 	context := llm.RequestMessages{Model: request.Model, SystemPrompt: request.Instructions}
 	context.Generation = llm.GenerationOptions{MaxOutputTokens: request.MaxOutputTokens, Temperature: request.Temperature, TopP: request.TopP}
+	if request.Reasoning != nil {
+		context.Generation.ReasoningEffort = request.Reasoning.Effort
+	}
 	if err := appendInputMessages(&context, request.Input); err != nil {
 		return AdaptedRequest{}, err
 	}

@@ -26,6 +26,8 @@ type Request struct {
 	TopP                *float64        `json:"top_p,omitempty"`
 	Stop                json.RawMessage `json:"stop,omitempty"`
 	ResponseFormat      json.RawMessage `json:"response_format,omitempty"`
+	// ReasoningEffort 通过中间层交给适配器选择对应的上游档位。
+	ReasoningEffort string `json:"reasoning_effort,omitempty"`
 }
 
 // Message 是 Chat Completions 消息条目。
@@ -103,7 +105,7 @@ func DecodeRequest(data []byte) (AdaptedRequest, error) {
 	if maxTokens == nil {
 		maxTokens = request.MaxTokens
 	}
-	context.Generation = llm.GenerationOptions{MaxOutputTokens: maxTokens, Temperature: request.Temperature, TopP: request.TopP}
+	context.Generation = llm.GenerationOptions{MaxOutputTokens: maxTokens, Temperature: request.Temperature, TopP: request.TopP, ReasoningEffort: request.ReasoningEffort}
 	if err := appendMessages(&context, request.Messages); err != nil {
 		return AdaptedRequest{}, err
 	}

@@ -6,10 +6,12 @@ openai-compatibility:
       - api-key: "SAME_AS_DEVIN_2API_AUTH_API_KEY"
         proxy-url: "direct"
     models:
-      - name: "REPLACE_WITH_UPSTREAM_MODEL_ID"
-        alias: "devin/REPLACE_WITH_UPSTREAM_MODEL_ID"
-        input-modalities: [text]
+      - name: "swe-2"
+        alias: "devin/swe-2"
+        display-name: "SWE-2 (Devin)"
+        max-context-length: 262000
+        input-modalities: [text, image]
         output-modalities: [text]
-        # This adapter does not implement client-selectable reasoning effort.
+        # The adapter chooses the upstream variant using reasoning_effort.
         thinking:
-          levels: []
+          levels: [medium, high, max]

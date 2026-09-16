@@ -8,6 +8,8 @@ import (
 
 // GenerationOptions 保存显式生成设置；指针用于区分未设置和合法的零值。
 type GenerationOptions struct {
+	// ReasoningEffort 是调用方选择的离散思考档位；空值保留模型默认档位。
+	ReasoningEffort string `json:"reasoning_effort,omitempty"`
 	// MaxOutputTokens 是输出 token 预算；nil 保留适配器默认值。
 	MaxOutputTokens *int `json:"max_output_tokens,omitempty"`
 	// Temperature 是采样温度；零值必须传给上游。

@@ -127,7 +127,10 @@ func (decoder *responseDecoder) updateMetadata(response *devinproto.GetChatMessa
 	if response.MessageId != nil {
 		decoder.partial.ResponseID = response.GetMessageId()
 	}
-	if response.ActualModelUid != nil {
+	if decoder.model == "swe-2" {
+		// 统一模型名保持稳定；实际档位标识只用于上游路由。
+		decoder.partial.ResponseModel = decoder.model
+	} else if response.ActualModelUid != nil {
 		decoder.partial.ResponseModel = response.GetActualModelUid()
 	}
 	if timestamp := response.GetTimestamp(); timestamp != nil {

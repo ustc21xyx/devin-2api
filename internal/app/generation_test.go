@@ -36,6 +36,21 @@ func TestGenerationOptionsReachAdapter(t *testing.T) {
 	}
 }
 
+func TestReasoningEffortReachesAdapter(t *testing.T) {
+	for endpoint, body := range map[string]string{
+		"/v1/chat/completions": `{"model":"swe-2","messages":[{"role":"user","content":"hi"}],"reasoning_effort":"max"}`,
+		"/v1/responses":        `{"model":"swe-2","input":"hi","reasoning":{"effort":"max"}}`,
+	} {
+		fake := &fakeAdapter{events: []llm.ResponseEvent{{Type: llm.ResponseEventDone, Reason: llm.StopReasonStop, Message: &llm.AssistantMessage{StopReason: llm.StopReasonStop}}}}
+		application := New(fake, config.ServerConfig{Listen: ":0"}, nil)
+		response := httptest.NewRecorder()
+		application.Router().ServeHTTP(response, httptest.NewRequest(http.MethodPost, endpoint, strings.NewReader(body)))
+		if response.Code != http.StatusOK || fake.lastRequest.Generation.ReasoningEffort != "max" {
+			t.Fatalf("%s: status=%d effort=%q", endpoint, response.Code, fake.lastRequest.Generation.ReasoningEffort)
+		}
+	}
+}
+
 func TestInvalidGenerationOptionsReturnBadRequest(t *testing.T) {
 	for _, field := range []string{`"max_tokens":-1`, `"max_tokens":0`, `"temperature":-0.1`, `"temperature":3`, `"top_p":1.1`} {
 		fake := &fakeAdapter{}

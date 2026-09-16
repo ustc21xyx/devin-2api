@@ -281,6 +281,10 @@ func buildRequest(request llm.RequestMessages, config Config) (*devinproto.GetCh
 	if err := request.Generation.Validate(); err != nil {
 		return nil, err
 	}
+	upstreamModel, err := resolveModel(config.Model, request.Generation.ReasoningEffort)
+	if err != nil {
+		return nil, err
+	}
 	fingerprint, err := randomHex(366)
 	if err != nil {
 		return nil, fmt.Errorf("generate Devin device fingerprint: %w", err)
@@ -301,7 +305,7 @@ func buildRequest(request llm.RequestMessages, config Config) (*devinproto.GetCh
 	result := &devinproto.GetChatMessageRequest{
 		Metadata:     metadata,
 		Prompt:       proto.String(withToolDescriptions(request.SystemPrompt, request.Tools)),
-		ChatModelUid: proto.String(config.Model),
+		ChatModelUid: proto.String(upstreamModel),
 		RequestType:  devinproto.ChatMessageRequestType_CHAT_MESSAGE_REQUEST_TYPE_CASCADE.Enum(),
 		Configuration: &devinproto.ExaCodeiumCommonPb_CompletionConfiguration{
 			NumCompletions: proto.Uint64(1),

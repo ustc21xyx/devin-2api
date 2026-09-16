@@ -5,7 +5,7 @@ server:
 devin:
   base_url: "https://server.codeium.com"
   token: "REPLACE_WITH_YOUR_SESSION_TOKEN"
-  model: "REPLACE_WITH_A_MODEL_FROM_YOUR_ACCOUNT_CATALOG"
+  model: "swe-2"
   proxy: "http://127.0.0.1:7890"
   force_http1: true
 auth:
