@@ -1,0 +1,27 @@
+[Unit]
+Description=Devin model protocol adapter for CPA
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+LoadCredential=config.yaml:/etc/devin-2api/config.yaml
+ExecStart=/data/data1/apps/devin-2api/devin-2api -config %d/config.yaml
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=768M
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

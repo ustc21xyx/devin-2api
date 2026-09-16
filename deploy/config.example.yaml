@@ -1,0 +1,16 @@
+# Store the real file outside this checkout, at /etc/devin-2api/config.yaml (0600).
+server:
+  listen: "127.0.0.1:18460"
+  max_concurrency: 8
+devin:
+  base_url: "https://server.codeium.com"
+  token: "REPLACE_WITH_YOUR_SESSION_TOKEN"
+  model: "REPLACE_WITH_A_MODEL_FROM_YOUR_ACCOUNT_CATALOG"
+  proxy: "http://127.0.0.1:7890"
+  force_http1: true
+auth:
+  api_key: "REPLACE_WITH_A_RANDOM_INTERNAL_KEY"
+dashboard:
+  password: "REPLACE_WITH_A_DIFFERENT_RANDOM_PASSWORD"
+debug:
+  enabled: false

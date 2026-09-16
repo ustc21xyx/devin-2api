@@ -35,6 +35,8 @@ type Message struct {
 	Name       string          `json:"name,omitempty"`
 	ToolCalls  []ToolCall      `json:"tool_calls,omitempty"`
 	ToolCallID string          `json:"tool_call_id,omitempty"`
+	// ReasoningContent 保留兼容客户端回传的助手思考历史。
+	ReasoningContent string `json:"reasoning_content,omitempty"`
 }
 
 // ToolCall 是助手消息中的工具调用（也用于流式增量）。
@@ -97,6 +99,11 @@ func DecodeRequest(data []byte) (AdaptedRequest, error) {
 	}
 
 	context := llm.RequestMessages{Model: request.Model}
+	maxTokens := request.MaxCompletionTokens
+	if maxTokens == nil {
+		maxTokens = request.MaxTokens
+	}
+	context.Generation = llm.GenerationOptions{MaxOutputTokens: maxTokens, Temperature: request.Temperature, TopP: request.TopP}
 	if err := appendMessages(&context, request.Messages); err != nil {
 		return AdaptedRequest{}, err
 	}
@@ -118,10 +125,6 @@ func DecodeRequest(data []byte) (AdaptedRequest, error) {
 		return AdaptedRequest{}, fmt.Errorf("validate adapted request: %w", err)
 	}
 
-	maxTokens := request.MaxCompletionTokens
-	if maxTokens == nil {
-		maxTokens = request.MaxTokens
-	}
 	return AdaptedRequest{
 		Context: context,
 		Options: RequestOptions{
@@ -205,6 +208,9 @@ func decodeUserContent(raw json.RawMessage) ([]llm.Content, error) {
 
 func decodeAssistantContent(message Message) ([]llm.Content, error) {
 	var content []llm.Content
+	if message.ReasoningContent != "" {
+		content = append(content, llm.ThinkingContent{Thinking: message.ReasoningContent})
+	}
 	if len(bytes.TrimSpace(message.Content)) > 0 && !bytes.Equal(bytes.TrimSpace(message.Content), []byte("null")) {
 		decoded, err := common.DecodeContent(message.Content)
 		if err != nil {
@@ -218,7 +224,7 @@ func decodeAssistantContent(message Message) ([]llm.Content, error) {
 		}
 		args := json.RawMessage(call.Function.Arguments)
 		if !llmIsJSONObject(args) {
-			args = json.RawMessage(`{}`)
+			return nil, fmt.Errorf("tool call %q arguments must be a JSON object", call.ID)
 		}
 		content = append(content, llm.ToolCall{
 			ID:        call.ID,

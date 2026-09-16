@@ -1,5 +1,8 @@
 # devin-2api
 
+> This fork adds CPA/Pi compatibility fixes. See [integration notes](docs/cpa-pi.md)
+> for changes, private deployment, and remaining protocol limitations.
+
 > **English** | [中文](README.zh-CN.md)
 
 devin-2api is a lightweight forwarding tool for the [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses). It exposes a standard `/v1/responses` endpoint and transparently forwards your LLM requests to Devin ([app.devin.ai](https://app.devin.ai/)) through an adapter — letting external programs call Devin's models through the standard OpenAI protocol.

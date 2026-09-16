@@ -40,6 +40,8 @@ type RequestMessages struct {
 	Messages []Message
 	// Tools 是本次请求允许模型调用的工具定义。
 	Tools []ToolDefinition
+	// Generation 保留调用方显式传入的生成参数，nil 字段使用供应商默认值。
+	Generation GenerationOptions
 }
 
 // Message 是用户、助手或工具结果消息的统一接口。
@@ -226,6 +228,9 @@ func (tool ToolDefinition) Validate() error {
 
 // Validate 检查完整请求上下文。
 func (request RequestMessages) Validate() error {
+	if err := request.Generation.Validate(); err != nil {
+		return err
+	}
 	for index, message := range request.Messages {
 		if message == nil {
 			return fmt.Errorf("message %d is nil", index)

@@ -17,7 +17,7 @@ type Request struct {
 	Model         string          `json:"model"`
 	Messages      []Message       `json:"messages"`
 	System        json.RawMessage `json:"system,omitempty"`
-	MaxTokens     int             `json:"max_tokens"`
+	MaxTokens     *int            `json:"max_tokens"`
 	Tools         []Tool          `json:"tools,omitempty"`
 	ToolChoice    json.RawMessage `json:"tool_choice,omitempty"`
 	Stream        bool            `json:"stream,omitempty"`
@@ -82,6 +82,7 @@ func DecodeRequest(data []byte) (AdaptedRequest, error) {
 	}
 
 	context := llm.RequestMessages{Model: request.Model}
+	context.Generation = llm.GenerationOptions{MaxOutputTokens: request.MaxTokens, Temperature: request.Temperature, TopP: request.TopP, TopK: request.TopK}
 	if len(bytes.TrimSpace(request.System)) > 0 && !bytes.Equal(bytes.TrimSpace(request.System), []byte("null")) {
 		if err := appendSystem(&context, request.System); err != nil {
 			return AdaptedRequest{}, err
@@ -105,11 +106,15 @@ func DecodeRequest(data []byte) (AdaptedRequest, error) {
 		return AdaptedRequest{}, fmt.Errorf("validate adapted request: %w", err)
 	}
 
+	maxTokens := 0
+	if request.MaxTokens != nil {
+		maxTokens = *request.MaxTokens
+	}
 	return AdaptedRequest{
 		Context: context,
 		Options: RequestOptions{
 			Stream:          request.Stream,
-			MaxOutputTokens: request.MaxTokens,
+			MaxOutputTokens: maxTokens,
 			Temperature:     request.Temperature,
 		},
 	}, nil

@@ -17,7 +17,7 @@ func RequestMessagesProjection(request llm.RequestMessages) map[string]any {
 			"name": tool.Name, "description": tool.Description, "input_schema": tool.InputSchema,
 		})
 	}
-	return map[string]any{"system_prompt": request.SystemPrompt, "messages": messages, "tools": tools}
+	return map[string]any{"system_prompt": request.SystemPrompt, "messages": messages, "tools": tools, "generation": request.Generation}
 }
 
 // ResponseEventProjection 将响应事件转成避免重复完整 Partial 的日志结构。

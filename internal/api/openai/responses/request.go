@@ -30,6 +30,8 @@ type Request struct {
 	MaxOutputTokens *int `json:"max_output_tokens,omitempty"`
 	// Temperature 是可选的采样温度。
 	Temperature *float64 `json:"temperature,omitempty"`
+	// TopP 是可选的概率质量采样阈值。
+	TopP *float64 `json:"top_p,omitempty"`
 	// PreviousResponseID 是上游 Responses 会话关联标识。
 	PreviousResponseID string `json:"previous_response_id,omitempty"`
 }
@@ -76,8 +78,12 @@ func DecodeRequest(data []byte) (AdaptedRequest, error) {
 	if request.Model == "" {
 		return AdaptedRequest{}, errors.New("responses request model is required")
 	}
+	if request.PreviousResponseID != "" {
+		return AdaptedRequest{}, errors.New("previous_response_id is not supported; send the full conversation in input")
+	}
 
 	context := llm.RequestMessages{Model: request.Model, SystemPrompt: request.Instructions}
+	context.Generation = llm.GenerationOptions{MaxOutputTokens: request.MaxOutputTokens, Temperature: request.Temperature, TopP: request.TopP}
 	if err := appendInputMessages(&context, request.Input); err != nil {
 		return AdaptedRequest{}, err
 	}
@@ -157,7 +163,7 @@ func appendInputItem(context *llm.RequestMessages, raw json.RawMessage) error {
 			return err
 		}
 		arguments := json.RawMessage(item.Arguments)
-		context.Messages = append(context.Messages, llm.AssistantMessage{
+		appendAssistantItem(context, llm.AssistantMessage{
 			Content:     []llm.Content{llm.ToolCall{ID: item.CallID, Name: item.Name, Arguments: arguments}},
 			StopReason:  llm.StopReasonToolUse,
 			TimestampMS: time.Now().UnixMilli(),
@@ -230,7 +236,7 @@ func appendMessageItem(context *llm.RequestMessages, raw json.RawMessage, role s
 	case "user":
 		context.Messages = append(context.Messages, llm.UserMessage{Content: content, TimestampMS: time.Now().UnixMilli()})
 	case "assistant":
-		context.Messages = append(context.Messages, llm.AssistantMessage{Content: content, TimestampMS: time.Now().UnixMilli()})
+		appendAssistantItem(context, llm.AssistantMessage{Content: content, TimestampMS: time.Now().UnixMilli()})
 	case "system", "developer":
 		text := common.ContentText(content)
 		if context.SystemPrompt != "" && text != "" {
@@ -239,4 +245,20 @@ func appendMessageItem(context *llm.RequestMessages, raw json.RawMessage, role s
 		context.SystemPrompt += text
 	}
 	return nil
+}
+
+// Responses 将同一助手轮次的文本和并行工具调用拆为独立 item；
+// 在用户消息或工具结果出现前将它们还原为一条助手消息。
+func appendAssistantItem(context *llm.RequestMessages, message llm.AssistantMessage) {
+	if n := len(context.Messages); n > 0 {
+		if previous, ok := context.Messages[n-1].(llm.AssistantMessage); ok {
+			previous.Content = append(previous.Content, message.Content...)
+			if message.StopReason == llm.StopReasonToolUse {
+				previous.StopReason = llm.StopReasonToolUse
+			}
+			context.Messages[n-1] = previous
+			return
+		}
+	}
+	context.Messages = append(context.Messages, message)
 }

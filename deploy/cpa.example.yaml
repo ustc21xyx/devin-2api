@@ -1,0 +1,15 @@
+# Merge this provider into the existing list; do not replace the CPA config.
+openai-compatibility:
+  - name: devin
+    base-url: "http://127.0.0.1:18460/v1"
+    api-key-entries:
+      - api-key: "SAME_AS_DEVIN_2API_AUTH_API_KEY"
+        proxy-url: "direct"
+    models:
+      - name: "REPLACE_WITH_UPSTREAM_MODEL_ID"
+        alias: "devin/REPLACE_WITH_UPSTREAM_MODEL_ID"
+        input-modalities: [text]
+        output-modalities: [text]
+        # This adapter does not implement client-selectable reasoning effort.
+        thinking:
+          levels: []

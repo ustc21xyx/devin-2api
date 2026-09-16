@@ -278,6 +278,9 @@ func (transport *authTransport) RoundTrip(request *http.Request) (*http.Response
 }
 
 func buildRequest(request llm.RequestMessages, config Config) (*devinproto.GetChatMessageRequest, error) {
+	if err := request.Generation.Validate(); err != nil {
+		return nil, err
+	}
 	fingerprint, err := randomHex(366)
 	if err != nil {
 		return nil, fmt.Errorf("generate Devin device fingerprint: %w", err)
@@ -316,6 +319,18 @@ func buildRequest(request llm.RequestMessages, config Config) (*devinproto.GetCh
 		CascadeId:   proto.String(cascadeID),
 		PlannerMode: devinproto.ExaCodeiumCommonPb_ConversationalPlannerMode_ExaCodeiumCommonPb_ConversationalPlannerMode_CONVERSATIONAL_PLANNER_MODE_DEFAULT.Enum(),
 		ExecutionId: proto.String(executionID),
+	}
+	if value := request.Generation.MaxOutputTokens; value != nil {
+		result.Configuration.MaxTokens = proto.Uint64(uint64(*value))
+	}
+	if value := request.Generation.Temperature; value != nil {
+		result.Configuration.Temperature = proto.Float64(*value)
+	}
+	if value := request.Generation.TopP; value != nil {
+		result.Configuration.TopP = proto.Float64(*value)
+	}
+	if value := request.Generation.TopK; value != nil {
+		result.Configuration.TopK = proto.Uint64(uint64(*value))
 	}
 	// Devin/Cascade 只可靠接受「当前轮」图片；历史图进 Images 会 invalid_argument。
 	// 当前轮 = 最后一条 AssistantMessage 之后的所有 user/tool 消息。

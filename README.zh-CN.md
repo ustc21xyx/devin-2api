@@ -1,5 +1,8 @@
 # devin-2api
 
+> 此 fork 维护 CPA/Pi 兼容性改进。改动、私有部署方式与协议限制见
+> [接入说明](docs/cpa-pi.md)。
+
 > [English](README.md) | **中文**
 
 devin-2api 是一个轻量的 [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) 转发工具。它对外暴露标准的 `/v1/responses` 接口，通过适配器把你的 LLM 请求透明转发到 Devin（[app.devin.ai](https://app.devin.ai/)）——让外部程序可以通过标准的 OpenAI 协议调用 Devin 内部的模型。
